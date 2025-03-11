@@ -1,0 +1,136 @@
+1) Pipeline para prever o preço de automóveis usando scikit-learn
+Aqui vamos utilizar um pipeline para transformar os dados e treinar um modelo de regressão linear. O pipeline terá as seguintes etapas:
+
+Transformar a variável categórica Combustível (Gasolina, Diesel, Etanol) em variáveis numéricas usando OneHotEncoder.
+Padronizar as variáveis numéricas Idade e Quilometragem usando StandardScaler.
+Criar um ColumnTransformer para aplicar transformações diferentes para cada tipo de dado (categórico e numérico).
+Treinar um modelo de regressão linear para prever o preço dos automóveis.
+Código:
+python
+Copiar
+import numpy as np
+import pandas as pd
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+
+# Dados fictícios
+dados = {
+    'Combustível': ['Gasolina', 'Diesel', 'Etanol', 'Gasolina', 'Diesel', 'Etanol', 'Gasolina'],
+    'Idade': [5, 3, 10, 4, 2, 7, 8],
+    'Quilometragem': [50000, 40000, 120000, 60000, 30000, 90000, 75000],
+    'Preço': [25000, 22000, 18000, 24000, 23000, 21000, 23500]
+}
+
+df = pd.DataFrame(dados)
+
+# Definindo X e y
+X = df[['Combustível', 'Idade', 'Quilometragem']]
+y = df['Preço']
+
+# Dividindo os dados em treino e teste
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Definindo o pipeline
+pipeline = Pipeline(steps=[
+    ('preprocessor', ColumnTransformer(
+        transformers=[
+            ('num', Pipeline(steps=[
+                ('imputer', SimpleImputer(strategy='mean')),
+                ('scaler', StandardScaler())
+            ]), ['Idade', 'Quilometragem']),
+            ('cat', Pipeline(steps=[
+                ('imputer', SimpleImputer(strategy='constant', fill_value='Desconhecido')),
+                ('onehot', OneHotEncoder())
+            ]), ['Combustível'])
+        ]
+    )),
+    ('regressor', LinearRegression())
+])
+
+# Treinando o modelo
+pipeline.fit(X_train, y_train)
+
+# Fazendo previsões
+y_pred = pipeline.predict(X_test)
+
+# Avaliando o desempenho do modelo usando erro quadrático médio (MSE)
+mse = mean_squared_error(y_test, y_pred)
+print(f"Erro Quadrático Médio (MSE): {mse}")
+
+Explicação:
+Preprocessing: A primeira parte do pipeline lida com a transformação das variáveis. Para variáveis numéricas (Idade e Quilometragem), utilizamos um StandardScaler para padronizar os dados. Para a variável categórica (Combustível), usamos OneHotEncoder para transformar em variáveis binárias (dummy variables).
+Modelo: Em seguida, aplicamos um modelo de regressão linear usando LinearRegression.
+Avaliação: O desempenho do modelo é avaliado usando o erro quadrático médio (MSE) entre as previsões e os valores reais.
+2) Prevendo o preço de criptomoedas com aprendizado de máquina
+Neste exercício, vamos usar uma API para coletar dados históricos do preço de uma criptomoeda (por exemplo, Bitcoin). Vamos utilizar o pacote yfinance para coletar dados históricos do mercado financeiro, treinar um modelo para prever se o preço no próximo dia será maior ou menor que o do dia atual e visualizar a importância das variáveis no modelo.
+
+Passos:
+Coletar os dados históricos usando uma API como o yfinance (para dados de criptomoedas como Bitcoin ou Ethereum).
+Preparar os dados para um modelo de classificação (maior ou menor preço no próximo dia).
+Treinar um modelo de aprendizado de máquina (ex: Random Forest).
+Avaliar a acurácia do modelo.
+Exibir a importância das variáveis.
+Código:
+python
+Copiar
+import yfinance as yf
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+
+# Baixando dados históricos de Bitcoin
+btc = yf.Ticker('BTC-USD')
+df = btc.history(period='1y')
+
+# Criando uma nova coluna 'Preço de Fechamento no próximo dia'
+df['Preco_proximo_dia'] = df['Close'].shift(-1)
+
+# Criando uma coluna para indicar se o preço no próximo dia será maior (1) ou menor (0)
+df['Alta_no_proximo_dia'] = (df['Preco_proximo_dia'] > df['Close']).astype(int)
+
+# Removendo as últimas linhas que não têm valor para o próximo dia
+df.dropna(inplace=True)
+
+# Selecionando as variáveis independentes
+X = df[['Open', 'High', 'Low', 'Close', 'Volume']]  # Usando variáveis anteriores para prever o próximo dia
+y = df['Alta_no_proximo_dia']
+
+# Dividindo os dados em treino e teste
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Treinando o modelo RandomForest
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Fazendo previsões
+y_pred = model.predict(X_test)
+
+# Avaliando o desempenho do modelo
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Acurácia do modelo: {accuracy}")
+
+# Exibindo a importância das variáveis
+importances = model.feature_importances_
+features = X.columns
+
+# Gráfico de importância das variáveis
+plt.figure(figsize=(10, 6))
+plt.barh(features, importances)
+plt.title("Importância das Variáveis para o Modelo")
+plt.show()
+Explicação:
+Coleta de Dados: Usamos a API yfinance para obter dados históricos de Bitcoin. O preço de fechamento de cada dia é usado para prever se o preço no próximo dia será maior ou menor.
+Pré-processamento: Criamos uma variável Alta_no_proximo_dia que é 1 se o preço do próximo dia for maior que o preço de fechamento do dia atual e 0 caso contrário.
+Modelo de Classificação: Usamos o RandomForestClassifier para treinar o modelo e prever a probabilidade de alta ou queda no próximo dia.
+Avaliação: A acurácia do modelo é avaliada comparando as previsões com os valores reais.
+Importância das Variáveis: Utilizamos o atributo feature_importances_ para visualizar a contribuição de cada variável no modelo.
+Observações:
+Acurácia: A acurácia do modelo pode variar dependendo dos dados e do modelo utilizado. Você pode ajustar os hiperparâmetros ou tentar diferentes modelos para melhorar o desempenho.
+API: Caso queira utilizar outras APIs para criptomoedas, você pode substituir o yfinance por APIs como a CoinGecko ou Binance, ajustando o código para a forma como os dados são retornados pela API.
